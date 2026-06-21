@@ -2,7 +2,7 @@
 
 Documento de arquitetura e estruturação de arquivos. Define a **convenção de
 nomes**, as **fronteiras entre domínios**, a **estrutura de pastas** e o **lint de
-fronteiras**. Companheiro do [`DESIGN.md`](./DESIGN.md), que cobre as regras do jogo.
+fronteiras**. Companheiro do [`GAMEPLAY.md`](./GAMEPLAY.md), que cobre as regras do jogo.
 
 Regra de ouro: **olhou o nome do arquivo, sabe a que domínio pertence e qual é a
 responsabilidade dele.**

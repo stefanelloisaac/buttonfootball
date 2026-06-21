@@ -10,7 +10,8 @@ Roda 100% no navegador, sem servidor.
 
 ## Documentação
 
-- [`DESIGN.md`](./DESIGN.md) — definições do jogo: regras, modos, condição de vitória.
+- [`GAMEPLAY.md`](./GAMEPLAY.md) — definições do jogo: regras, modos, condição de vitória.
+- [`DESIGN.md`](./DESIGN.md) — sistema visual: paleta, tipografia, componentes, layout.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — convenção de nomes, regra de camadas,
   estrutura de arquivos e lint de fronteiras.
 
