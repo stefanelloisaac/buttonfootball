@@ -25,31 +25,31 @@ Exemplos: `physics.collision.system.ts`, `game.state.ts`, `ui.hud.component.tsx`
 
 ### 1.1 Domínios (prefixos permitidos)
 
-| Prefixo   | Responsabilidade                                              |
-| --------- | ------------------------------------------------------------ |
-| `core`    | Primitivos genéricos, sem regra de jogo (vetores, math).     |
-| `game`    | Orquestração: loop, estado, máquina de fases.                |
-| `physics` | Movimento, colisão, atrito, integração.                      |
-| `rules`   | Regras: turnos, gol, vitória, restrição de goleiro.          |
-| `field`   | Geometria do campo (dimensões, traves, áreas).               |
-| `input`   | Captura do estilingue (mouse/touch).                         |
-| `render`  | Desenho no Canvas 2D.                                        |
-| `ai`      | IA do oponente CPU.                                          |
-| `ui`      | React: menu, HUD, telas.                                     |
+| Prefixo   | Responsabilidade                                         |
+| --------- | -------------------------------------------------------- |
+| `core`    | Primitivos genéricos, sem regra de jogo (vetores, math). |
+| `game`    | Orquestração: loop, estado, máquina de fases.            |
+| `physics` | Movimento, colisão, atrito, integração.                  |
+| `rules`   | Regras: turnos, gol, vitória, restrição de goleiro.      |
+| `field`   | Geometria do campo (dimensões, traves, áreas).           |
+| `input`   | Captura do estilingue (mouse/touch).                     |
+| `render`  | Desenho no Canvas 2D.                                    |
+| `ai`      | IA do oponente CPU.                                      |
+| `ui`      | React: menu, HUD, telas.                                 |
 
 ### 1.2 Sufixos de tipo (o que o arquivo É)
 
 | Sufixo      | Conteúdo permitido                                              |
-| ----------- | ------------------------------------------------------------- |
-| `types`     | Só tipos/interfaces. Sem lógica.                              |
-| `config`    | Só constantes. Nenhuma função com efeito.                    |
+| ----------- | --------------------------------------------------------------- |
+| `types`     | Só tipos/interfaces. Sem lógica.                                |
+| `config`    | Só constantes. Nenhuma função com efeito.                       |
 | `system`    | Funções puras `(state, ...) => newState` ou que mutam um corpo. |
-| `util`      | Funções auxiliares puras e reutilizáveis.                     |
-| `state`     | Criação/clonagem do estado inicial.                          |
-| `store`     | Estado observável (se necessário).                           |
-| `component` | Componente React (`.tsx`).                                   |
-| `hook`      | Hook React.                                                  |
-| `index`     | Barrel: API pública do domínio.                             |
+| `util`      | Funções auxiliares puras e reutilizáveis.                       |
+| `state`     | Criação/clonagem do estado inicial.                             |
+| `store`     | Estado observável (se necessário).                              |
+| `component` | Componente React (`.tsx`).                                      |
+| `hook`      | Hook React.                                                     |
+| `index`     | Barrel: API pública do domínio.                                 |
 
 Regras por sufixo:
 
@@ -65,17 +65,40 @@ Regras por sufixo:
 ```
 core   ← pode ser importado por todos
 game   ← importa core
-physics, rules, field, render, input, ai   ← importam core + game
+field, physics, rules, input, render, ai   ← importam core + game (+ exceções abaixo)
 ui     ← importa qualquer domínio (sempre via index.ts)
 ```
 
-### 2.1 Mapa de dependências
+### 2.1 Matriz de dependências permitidas
+
+Cada domínio pode importar **a si mesmo**, `core` e os listados. Tudo o que não
+está na lista é **proibido** (a regra padrão do lint é `disallow`).
+
+| De \\ Pode importar | core | game | field | physics | input | render | rules | ai  |
+| ------------------- | :--: | :--: | :---: | :-----: | :---: | :----: | :---: | :-: |
+| `core`              |  —   |      |       |         |       |        |       |     |
+| `game`              |  ✅  |  —   |       |         |       |        |       |     |
+| `field`             |  ✅  |  ✅  |   —   |         |       |        |       |     |
+| `physics`           |  ✅  |  ✅  |       |    —    |       |        |       |     |
+| `rules`             |  ✅  |  ✅  |  ✅   |         |       |        |   —   |     |
+| `input`             |  ✅  |  ✅  |       |         |   —   |        |       |     |
+| `render`            |  ✅  |  ✅  |       |         |  ✅   |   —    |       |     |
+| `ai`                |  ✅  |  ✅  |       |         |  ✅   |        |       |  —  |
+| `ui`                |  ✅  |  ✅  |  ✅   |   ✅    |  ✅   |   ✅   |  ✅   | ✅  |
+
+**Exceções de mesmo nível (justificadas):**
+
+- `rules` → `field`: regras de gol/goleiro consultam a geometria do campo.
+- `render` → `input`: o estilingue precisa do `DragState` para desenhar a mira.
+- `ai` → `input`: a decisão da IA produz um `ShotVector` (tipo do `input`).
+
+### 2.2 Mapa de dependências
 
 ```
         ui  ───────────────► (importa tudo via index.ts)
         │
         ▼
-  render  input  ai  rules  physics  field
+  render → input    ai → input    rules → field    physics
         │
         ▼
       game
@@ -84,13 +107,14 @@ ui     ← importa qualquer domínio (sempre via index.ts)
       core   ◄── base, não importa ninguém
 ```
 
-### 2.2 Princípios
+### 2.3 Princípios
 
 - Cada domínio expõe **apenas** seu `index.ts` (API pública).
 - **Proibido** importar arquivo interno de outro domínio (só pelo `index.ts`).
-- **Proibido** import cruzado entre domínios de mesmo nível
-  (ex.: `physics` não importa `render`).
-- A comunicação entre domínios de mesmo nível é orquestrada pelo `game`.
+- **Proibido** import cruzado não listado na matriz (seção 2.1).
+- O `game.engine` **não** importa physics/rules/render: recebe esses passos por
+  injeção (`EngineHooks`); o wiring concreto vive na camada `ui`. Isso mantém
+  `game` dependente apenas de `core`.
 
 ---
 
@@ -184,54 +208,64 @@ src/
 ## 5. Lint de fronteiras
 
 A regra de camadas é reforçada por lint, não só por disciplina.
+Implementado com **`eslint-plugin-boundaries` v6** (já instalado como devDependency).
 
-- **Plugin:** `eslint-plugin-boundaries` (dev dependency a adicionar).
 - **Regras ativadas:**
-  - `boundaries/element-types` — define a matriz de quem pode importar quem.
-  - `boundaries/no-private` — força a entrada só pelo `index.ts` de cada domínio.
-  - `boundaries/no-unknown` — proíbe arquivos fora da convenção.
+  - `boundaries/dependencies` — define a matriz de quem pode importar quem
+    (na v6 substitui a antiga `boundaries/element-types`).
+  - `boundaries/no-unknown` — proíbe imports de elementos fora dos domínios.
 
-### 5.1 Config planejada (ESLint flat — `eslint.config.js`)
+### 5.1 Config aplicada (ESLint flat — `eslint.config.js`)
 
-> A instalação do pacote e a aplicação no `eslint.config.js` ocorrem na fase de
-> implementação. O trecho abaixo é a referência a ser colada.
+Pontos de implementação:
+
+- Elementos definidos por pasta (`mode: 'folder'`), o que faz qualquer arquivo
+  dentro de `src/<dominio>/` pertencer ao domínio.
+- `import/resolver` com extensões `.ts/.tsx` para resolver os barrels `index.ts`.
+- Selectors no formato **object-based** da v6 (`from: { type }`,
+  `allow: [{ to: { type } }]`), encapsulados pelo helper `toTypes`.
+- `src/main.tsx` (entrypoint) fica isento das regras de fronteira.
 
 ```js
 import boundaries from 'eslint-plugin-boundaries'
+
+/** Converte tipos de domínio em selectors object-based de destino. */
+const toTypes = (...types) => types.map((type) => ({ to: { type } }))
 
 // adicionar ao array exportado por defineConfig([...])
 {
   files: ['src/**/*.{ts,tsx}'],
   plugins: { boundaries },
   settings: {
+    'import/resolver': { node: { extensions: ['.ts', '.tsx', '.js', '.jsx'] } },
+    'boundaries/include': ['src/**/*'],
     'boundaries/elements': [
-      { type: 'core',    pattern: 'src/core/*' },
-      { type: 'game',    pattern: 'src/game/*' },
-      { type: 'field',   pattern: 'src/field/*' },
-      { type: 'physics', pattern: 'src/physics/*' },
-      { type: 'rules',   pattern: 'src/rules/*' },
-      { type: 'input',   pattern: 'src/input/*' },
-      { type: 'render',  pattern: 'src/render/*' },
-      { type: 'ai',      pattern: 'src/ai/*' },
-      { type: 'ui',      pattern: 'src/ui/*' },
+      { type: 'core',    pattern: 'src/core',    mode: 'folder' },
+      { type: 'game',    pattern: 'src/game',    mode: 'folder' },
+      { type: 'field',   pattern: 'src/field',   mode: 'folder' },
+      { type: 'physics', pattern: 'src/physics', mode: 'folder' },
+      { type: 'rules',   pattern: 'src/rules',   mode: 'folder' },
+      { type: 'input',   pattern: 'src/input',   mode: 'folder' },
+      { type: 'render',  pattern: 'src/render',  mode: 'folder' },
+      { type: 'ai',      pattern: 'src/ai',      mode: 'folder' },
+      { type: 'ui',      pattern: 'src/ui',      mode: 'folder' },
     ],
   },
   rules: {
     'boundaries/no-unknown': 'error',
-    'boundaries/no-private': 'error',
-    'boundaries/element-types': ['error', {
+    'boundaries/dependencies': ['error', {
       default: 'disallow',
       rules: [
-        { from: 'core',    allow: ['core'] },
-        { from: 'game',    allow: ['core', 'game'] },
-        { from: 'field',   allow: ['core', 'game'] },
-        { from: 'physics', allow: ['core', 'game'] },
-        { from: 'rules',   allow: ['core', 'game'] },
-        { from: 'input',   allow: ['core', 'game'] },
-        { from: 'render',  allow: ['core', 'game'] },
-        { from: 'ai',      allow: ['core', 'game'] },
-        { from: 'ui',      allow: ['core', 'game', 'field', 'physics',
-                                    'rules', 'input', 'render', 'ai', 'ui'] },
+        { from: { type: 'core' },    allow: toTypes('core') },
+        { from: { type: 'game' },    allow: toTypes('core', 'game') },
+        { from: { type: 'field' },   allow: toTypes('core', 'game', 'field') },
+        { from: { type: 'physics' }, allow: toTypes('core', 'game', 'physics') },
+        { from: { type: 'rules' },   allow: toTypes('core', 'game', 'field', 'rules') },
+        { from: { type: 'input' },   allow: toTypes('core', 'game', 'input') },
+        { from: { type: 'render' },  allow: toTypes('core', 'game', 'input', 'render') },
+        { from: { type: 'ai' },      allow: toTypes('core', 'game', 'input', 'ai') },
+        { from: { type: 'ui' },      allow: toTypes('core', 'game', 'field',
+            'physics', 'rules', 'input', 'render', 'ai', 'ui') },
       ],
     }],
   },
@@ -247,7 +281,7 @@ Antes de aceitar um novo arquivo, verificar:
 - [ ] O nome segue `<dominio>.<nome>.<tipo>.ts`.
 - [ ] O prefixo é um domínio válido (seção 1.1).
 - [ ] O sufixo é um tipo válido (seção 1.2) e respeita as restrições de conteúdo.
-- [ ] Os imports respeitam a regra de camadas (seção 2).
-- [ ] Imports de outros domínios passam pelo `index.ts`, nunca por arquivo interno.
+- [ ] Os imports respeitam a matriz de camadas (seção 2.1) — verificado por `npm run lint`.
+- [ ] Imports de outros domínios passam pelo `index.ts`, nunca por arquivo interno
+      (convenção; entrada única por barrel).
 - [ ] Arquivos `system`/`util`/`types`/`config` não importam React.
-```

@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# Futebol de Botão
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Jogo de futebol de botão para a web. Visão de cima (top-down), controle por
+estilingue (arrasta-e-solta), com modos **2 jogadores local** e **vs Computador**.
+Roda 100% no navegador, sem servidor.
 
-Currently, two official plugins are available:
+> Estado atual: **esqueleto estrutural**. A arquitetura, as fronteiras de domínio
+> e o tooling estão completos e validados; a lógica de jogo (física, regras, IA,
+> render) está com stubs marcados como `// TODO`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Documentação
 
-## React Compiler
+- [`DESIGN.md`](./DESIGN.md) — definições do jogo: regras, modos, condição de vitória.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — convenção de nomes, regra de camadas,
+  estrutura de arquivos e lint de fronteiras.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack
 
-## Expanding the ESLint configuration
+- **Vite** + **React 19** + **TypeScript**
+- **Canvas 2D** para renderização (sem dependências de jogo)
+- Física caseira (círculos com colisão elástica e atrito)
+- **ESLint** (com fronteiras de arquitetura via `eslint-plugin-boundaries`)
+- **Prettier** para formatação
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Como rodar
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install      # instala dependências
+npm run dev      # servidor de desenvolvimento (Vite + HMR)
+npm run build    # build de produção (tsc -b && vite build)
+npm run preview  # serve o build de produção localmente
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Script                 | O que faz                                                |
+| ---------------------- | -------------------------------------------------------- |
+| `npm run dev`          | Servidor de desenvolvimento com HMR.                     |
+| `npm run build`        | Type-check (`tsc -b`) + build de produção.               |
+| `npm run preview`      | Serve o build de produção.                               |
+| `npm run lint`         | Roda o ESLint (inclui as fronteiras de camadas).         |
+| `npm run lint:fix`     | ESLint com correção automática.                          |
+| `npm run format`       | Formata todo o projeto com Prettier.                     |
+| `npm run format:check` | Verifica a formatação sem alterar arquivos.              |
+| `npm run fix:all`      | **Corrige lint + formata tudo** (`lint:fix` + `format`). |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Estrutura
+
+Cada domínio em `src/` é isolado e exposto apenas pelo seu `index.ts`. A regra de
+camadas é reforçada por lint (ver [`ARCHITECTURE.md`](./ARCHITECTURE.md)).
+
 ```
+src/
+├── core/      # primitivos: vetores, math (sem regra de jogo)
+├── game/      # estado, fases, engine (loop), config da partida
+├── field/     # geometria do campo: dimensões, áreas, gols
+├── physics/   # corpos, integração, colisão, repouso
+├── rules/     # turnos, gol, goleiro, vitória
+├── input/     # estilingue (arraste -> disparo), ponteiro
+├── render/    # desenho no Canvas: campo, corpos, mira, cena
+├── ai/        # decisão da CPU por dificuldade
+├── ui/        # React: menu, HUD, canvas, hook de estado
+└── main.tsx   # entrypoint
+```
+
+### Convenção de nomes
+
+Todo arquivo segue `<dominio>.<nome>.<tipo>.ts`, por exemplo:
+`physics.collision.system.ts`, `game.state.ts`, `ui.hud.component.tsx`.
+Detalhes em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+
+## Próximos passos
+
+Preencher a lógica dos stubs, de baixo para cima nas dependências:
+`core → physics → field → game → rules → input → render → ai → ui`.

@@ -1,14 +1,14 @@
 /**
  * physics.collision.system — resolução de colisões entre corpos e com paredes.
  */
-import type { Body } from './physics.types'
+import type { Body } from './physics.types';
 
 /** Limites retangulares usados na colisão com paredes. */
 export interface Bounds {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
 }
 
 /**
@@ -18,9 +18,9 @@ export interface Bounds {
  */
 export function resolveBodyCollision(a: Body, b: Body): boolean {
   // TODO: detectar sobreposição e resolver colisão elástica com massas
-  void a
-  void b
-  throw new Error('NOT_IMPLEMENTED: resolveBodyCollision')
+  void a;
+  void b;
+  throw new Error('NOT_IMPLEMENTED: resolveBodyCollision');
 }
 
 /**
@@ -29,14 +29,14 @@ export function resolveBodyCollision(a: Body, b: Body): boolean {
  */
 export function resolveWallCollision(body: Body, bounds: Bounds): boolean {
   // TODO: refletir velocidade ao ultrapassar limites
-  void body
-  void bounds
-  throw new Error('NOT_IMPLEMENTED: resolveWallCollision')
+  void body;
+  void bounds;
+  throw new Error('NOT_IMPLEMENTED: resolveWallCollision');
 }
 
 /** Resolve todas as colisões corpo-corpo do conjunto (par a par). */
 export function resolveAllCollisions(bodies: Body[], bounds: Bounds): void {
   // TODO: pares de corpos + paredes
-  void bodies
-  void bounds
+  void bodies;
+  void bounds;
 }

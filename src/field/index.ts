@@ -10,10 +10,6 @@ export {
   PENALTY_AREA_DEPTH,
   PENALTY_AREA_WIDTH,
   CENTER_CIRCLE_RADIUS,
-} from './field.config'
-export type { FieldSide } from './field.geometry.util'
-export {
-  isInsidePenaltyArea,
-  detectGoalSide,
-  clampToField,
-} from './field.geometry.util'
+} from './field.config';
+export type { FieldSide } from './field.geometry.util';
+export { isInsidePenaltyArea, detectGoalSide, clampToField } from './field.geometry.util';
